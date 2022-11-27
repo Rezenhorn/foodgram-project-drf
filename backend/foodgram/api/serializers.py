@@ -1,51 +1,27 @@
-import base64
-
-from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404
 from djoser.serializers import UserSerializer
-from recipes.models import (FavoriteRecipe, Ingredients, RecipeIngredient,
-                            RecipeInShoppingCart, Recipes, RecipeTag, Tags)
+from drf_extra_fields.fields import Base64ImageField
+from recipes.models import (Ingredients, RecipeIngredient, Recipes, RecipeTag,
+                            Tags)
 from rest_framework import serializers
-from rest_framework.validators import UniqueValidator
-from users.models import Subscription
-from users.validators import UsernameValidator
 
 User = get_user_model()
 
 
-class CustomUsersSerializer(UserSerializer):
-    username = serializers.CharField(
-        max_length=settings.USERNAME_MAX_LENGTH,
-        validators=(UniqueValidator(queryset=User.objects.all()),
-                    UsernameValidator(),)
-    )
+class UsersSerializer(UserSerializer):
     is_subscribed = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = ("username", "id", "email", "first_name",
-                  "last_name", "is_subscribed", "password")
-        extra_kwargs = {"password": {"write_only": True}}
-
-    def create(self, validated_data):
-        user = User(
-            email=validated_data["email"],
-            username=validated_data["username"],
-            first_name=validated_data["first_name"],
-            last_name=validated_data["last_name"]
-        )
-        user.set_password(validated_data["password"])
-        user.save()
-        return user
+                  "last_name", "is_subscribed")
 
     def get_is_subscribed(self, obj):
         user = self.context["request"].user
         if not user.is_authenticated:
             return False
-        return Subscription.objects.filter(
-            user=user, author=obj).exists()
+        return user.follower.filter(author=obj).exists()
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -58,15 +34,6 @@ class IngredientSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ingredients
         fields = ("id", "name", "measurement_unit")
-
-
-class Base64ImageField(serializers.ImageField):
-    def to_internal_value(self, data):
-        if isinstance(data, str) and data.startswith("data:image"):
-            format, imgstr = data.split(";base64,")
-            ext = format.split("/")[-1]
-            data = ContentFile(base64.b64decode(imgstr), name="temp." + ext)
-        return super().to_internal_value(data)
 
 
 class RecipeIngredientSerializer(serializers.ModelSerializer):
@@ -86,9 +53,8 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
 
 class RecipeSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
-    author = CustomUsersSerializer(read_only=True)
-    ingredients = RecipeIngredientSerializer(source="recipeingredient_set",
-                                             many=True)
+    author = UsersSerializer(read_only=True)
+    ingredients = RecipeIngredientSerializer(many=True)
     image = Base64ImageField()
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
@@ -101,20 +67,16 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     def get_is_favorited(self, obj):
         user = self.context["request"].user
-        if not user.is_authenticated:
-            return False
-        return FavoriteRecipe.objects.filter(
-            recipe=obj, user=user).exists()
+        return (user.is_authenticated and
+                user.favorite_recipes.filter(recipe=obj).exists())
 
     def get_is_in_shopping_cart(self, obj):
         user = self.context["request"].user
-        if not user.is_authenticated:
-            return False
-        return RecipeInShoppingCart.objects.filter(
-            recipe=obj, user=user).exists()
+        return (user.is_authenticated and
+                user.cart_user.filter(recipe=obj).exists())
 
     def create(self, validated_data):
-        validated_data.pop("recipeingredient_set")
+        validated_data.pop("ingredients")
         context_request = self.context["request"]
         ingredients = context_request.data["ingredients"]
         tags_id = context_request.data["tags"]
@@ -141,9 +103,9 @@ class RecipeSerializer(serializers.ModelSerializer):
         tag_list = self.context["request"].data.get("tags")
         if tag_list:
             instance.tags.set(tag_list)
-        if "recipeingredient_set" in validated_data:
+        if "ingredients" in validated_data:
             RecipeIngredient.objects.filter(recipe=instance).delete()
-            validated_data.pop("recipeingredient_set")
+            validated_data.pop("ingredients")
             context_request = self.context["request"]
             ingredients = context_request.data["ingredients"]
             for ingredient_dict in ingredients:
@@ -163,12 +125,12 @@ class ShortRecipeSerializer(serializers.ModelSerializer):
         fields = ("id", "name", "image", "cooking_time")
 
 
-class SubscriptionSerializer(CustomUsersSerializer):
+class SubscriptionSerializer(UsersSerializer):
     recipes = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
 
-    class Meta(CustomUsersSerializer.Meta):
-        fields = (CustomUsersSerializer.Meta.fields
+    class Meta(UsersSerializer.Meta):
+        fields = (UsersSerializer.Meta.fields
                   + ("recipes", "recipes_count",))
 
     def get_recipes(self, obj):

@@ -1,24 +1,22 @@
 from django.contrib.auth import get_user_model
-from django.core.files import File
-from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from recipes.models import (FavoriteRecipe, Ingredients, RecipeInShoppingCart,
                             Recipes, Tags)
 from rest_framework import status
 from rest_framework.decorators import action
-from rest_framework.filters import SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import (GenericViewSet, ModelViewSet,
                                      ReadOnlyModelViewSet)
 from users.models import Subscription
 
-from .filters import RecipeFilter
+from .filters import IngredientSearch, RecipeFilter
 from .permissions import AdminOwnerOrReadOnly
 from .serializers import (IngredientSerializer, RecipeSerializer,
                           ShortRecipeSerializer, SubscriptionSerializer,
                           TagSerializer)
+from .utils import form_shopping_list
 
 User = get_user_model()
 
@@ -32,7 +30,7 @@ class TagViewSet(ReadOnlyModelViewSet):
 class IngredientViewSet(ReadOnlyModelViewSet):
     queryset = Ingredients.objects.all()
     serializer_class = IngredientSerializer
-    filter_backends = (SearchFilter,)
+    filter_backends = (IngredientSearch,)
     search_fields = ("^name",)
     pagination_class = None
 
@@ -52,8 +50,7 @@ class RecipeViewSet(ModelViewSet):
         recipe = get_object_or_404(Recipes, pk=pk)
         serializer = ShortRecipeSerializer(recipe)
         user = request.user
-        favorite_recipe = FavoriteRecipe.objects.filter(user=user,
-                                                        recipe=recipe)
+        favorite_recipe = user.favorite_recipes.filter(recipe=recipe)
         if request.method == "DELETE":
             if favorite_recipe.exists():
                 favorite_recipe.delete()
@@ -78,8 +75,7 @@ class RecipeViewSet(ModelViewSet):
         recipe = get_object_or_404(Recipes, pk=pk)
         serializer = ShortRecipeSerializer(recipe)
         user = request.user
-        cart_recipe = RecipeInShoppingCart.objects.filter(user=user,
-                                                          recipe=recipe)
+        cart_recipe = user.cart_user.filter(recipe=recipe)
         if request.method == "DELETE":
             if cart_recipe.exists():
                 cart_recipe.delete()
@@ -101,34 +97,20 @@ class RecipeViewSet(ModelViewSet):
             url_path="download_shopping_cart",
             permission_classes=(IsAuthenticated,))
     def download_shopping_cart(self, request):
-        with open("shopping_list.txt", "w", encoding="utf-8") as file:
-            myfile = File(file)
-            shopping_list = dict()
-
-            for ingredient in request.user.cart_user.values_list(
-                    "recipe__recipeingredient__ingredient__name",
-                    "recipe__recipeingredient__ingredient__measurement_unit",
-                    "recipe__recipeingredient__amount"):
-                if ingredient[0] not in shopping_list:
-                    shopping_list[ingredient[0]] = [ingredient[1],
-                                                    ingredient[2]]
-                else:
-                    shopping_list[ingredient[0]][1] += ingredient[2]
-            for ingredient in shopping_list:
-                myfile.write(f"{ingredient} ({shopping_list[ingredient][0]}) "
-                             f"— {shopping_list[ingredient][1]}\n")
-            myfile.write("______________________________\n"
-                         "Продуктовый помощник Foodgram")
-        with open("shopping_list.txt", "r", encoding="utf-8") as file:
-            response = HttpResponse(
-                file, content_type="text/plain; charset=utf-8"
-            )
-            response["Content-Disposition"] = ("attachment;"
-                                               " filename='shopping_cart.txt'")
-            return response
+        shopping_list = dict()
+        for ingredient in request.user.cart_user.values_list(
+                "recipe__ingredients__ingredient__name",
+                "recipe__ingredients__ingredient__measurement_unit",
+                "recipe__ingredients__amount"):
+            if ingredient[0] not in shopping_list:
+                shopping_list[ingredient[0]] = [ingredient[1],
+                                                ingredient[2]]
+            else:
+                shopping_list[ingredient[0]][1] += ingredient[2]
+        return form_shopping_list(shopping_list)
 
 
-class SubscribtionViewSet(GenericViewSet):
+class SubscriptionViewSet(GenericViewSet):
     serializer_class = SubscriptionSerializer
     permission_classes = (IsAuthenticated,)
 
@@ -138,7 +120,7 @@ class SubscribtionViewSet(GenericViewSet):
     @action(detail=False,
             methods=["get"],
             url_path="subscriptions")
-    def subscribtions(self, request):
+    def subscriptions(self, request):
         page = self.paginate_queryset(self.get_queryset())
         if page is not None:
             serializer = self.get_serializer(page, many=True)
@@ -152,8 +134,7 @@ class SubscribtionViewSet(GenericViewSet):
     def subscribe(self, request, pk):
         user = request.user
         user_to_follow = get_object_or_404(User, pk=pk)
-        subscription = Subscription.objects.filter(user=user,
-                                                   author=user_to_follow)
+        subscription = user.follower.filter(author=user_to_follow)
         if request.method == "DELETE":
             if subscription.exists():
                 subscription.delete()

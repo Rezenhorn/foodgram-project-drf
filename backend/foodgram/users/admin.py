@@ -9,7 +9,7 @@ admin.site.register(Subscription)
 
 @admin.register(User)
 class PostAdmin(admin.ModelAdmin):
-    list_display = ("username", "email", "role")
+    list_display = ("username", "email")
     search_fields = ("username",)
     list_filter = ("email", "first_name")
     empty_value_display = "-пусто-"

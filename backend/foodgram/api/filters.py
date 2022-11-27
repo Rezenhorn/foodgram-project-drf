@@ -1,5 +1,6 @@
 from django_filters.rest_framework import FilterSet, filters
 from recipes.models import Recipes, Tags
+from rest_framework.filters import SearchFilter
 
 
 class RecipeFilter(FilterSet):
@@ -23,5 +24,9 @@ class RecipeFilter(FilterSet):
         if name == "is_in_shopping_cart" and value:
             return queryset.filter(cart_recipe__user=user)
         if name == "is_favorited" and value:
-            return queryset.filter(fav_recipe__user=user)
+            return queryset.filter(user_favorite_recipes__user=user)
         return queryset
+
+
+class IngredientSearch(SearchFilter):
+    search_param = "name"

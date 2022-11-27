@@ -7,12 +7,11 @@ load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'c5c(kd4sjxv$oh47%yr)--qhy@8o)310!@wltt-gzcx3ya(ikz'
-# SECRET_KEY = os.getenv('SECRET_KEY', 'default-key')
+SECRET_KEY = os.getenv('SECRET_KEY', 'default-key')
 
-DEBUG = True
+DEBUG = bool(os.getenv('DEBUG', 'False'))
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = list(os.getenv('ALLOWED_HOSTS', ['*']))
 
 
 INSTALLED_APPS = [
@@ -67,12 +66,12 @@ DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'foodgram_db',
-        'USER': 'admin',
-        'PASSWORD': 'admin',
-        'HOST': '127.0.0.1',
-        'PORT': '5432'
+        'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.postgresql'),
+        'NAME': os.getenv('DB_NAME', 'postgres'),
+        'USER': os.getenv('POSTGRES_USER', 'postgres'),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'postgres'),
+        'HOST': os.getenv('DB_HOST', 'db'),
+        'PORT': os.getenv('DB_PORT', '5432')
     }
 }
 
@@ -112,9 +111,8 @@ DJOSER = {
     "HIDE_USERS": False,
     'LOGIN_FIELD': 'email',
     'SERIALIZERS': {
-        "user": "api.serializers.CustomUsersSerializer",
-        "user_create": "api.serializers.CustomUsersSerializer",
-        'current_user': 'api.serializers.CustomUsersSerializer',
+        "user": "api.serializers.UsersSerializer",
+        'current_user': 'api.serializers.UsersSerializer',
     },
     'PERMISSIONS': {
         "user": ["rest_framework.permissions.IsAuthenticated"],

@@ -11,7 +11,7 @@ router_v1.register("ingredients",
                    views.IngredientViewSet,
                    basename="ingredients")
 router_v1.register("recipes", views.RecipeViewSet, basename="recipes")
-router_v1.register("users", views.SubscribtionViewSet, basename="subscription")
+router_v1.register("users", views.SubscriptionViewSet, basename="subscription")
 
 
 urlpatterns = [
