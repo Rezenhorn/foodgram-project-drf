@@ -1,15 +1,13 @@
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
-from djoser.serializers import UserSerializer
 from drf_extra_fields.fields import Base64ImageField
-from recipes.models import (Ingredients, RecipeIngredient, Recipes, RecipeTag,
-                            Tags)
+from recipes.models import Ingredients, RecipeIngredient, Recipes, Tags
 from rest_framework import serializers
 
 User = get_user_model()
 
 
-class UsersSerializer(UserSerializer):
+class UsersSerializer(serializers.ModelSerializer):
     is_subscribed = serializers.SerializerMethodField()
 
     class Meta:
@@ -73,18 +71,18 @@ class RecipeSerializer(serializers.ModelSerializer):
     def get_is_in_shopping_cart(self, obj):
         user = self.context["request"].user
         return (user.is_authenticated and
-                user.cart_user.filter(recipe=obj).exists())
+                user.cart_recipes.filter(recipe=obj).exists())
 
     def create(self, validated_data):
-        validated_data.pop("ingredients")
         context_request = self.context["request"]
+        validated_data.pop("ingredients")
         ingredients = context_request.data["ingredients"]
         tags_id = context_request.data["tags"]
         recipe = Recipes.objects.create(**validated_data,
                                         author=context_request.user)
         for id in tags_id:
             tag = get_object_or_404(Tags, id=id)
-            RecipeTag.objects.create(recipe=recipe, tag=tag)
+            recipe.tags.add(tag)
         for ingredient_dict in ingredients:
             ingredient = get_object_or_404(Ingredients,
                                            id=ingredient_dict.get("id"))
@@ -130,8 +128,7 @@ class SubscriptionSerializer(UsersSerializer):
     recipes_count = serializers.SerializerMethodField()
 
     class Meta(UsersSerializer.Meta):
-        fields = (UsersSerializer.Meta.fields
-                  + ("recipes", "recipes_count",))
+        fields = (UsersSerializer.Meta.fields + ("recipes", "recipes_count",))
 
     def get_recipes(self, obj):
         return ShortRecipeSerializer(obj.recipes.all(), many=True).data

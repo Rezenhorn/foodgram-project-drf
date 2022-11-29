@@ -51,21 +51,18 @@ class RecipeViewSet(ModelViewSet):
         serializer = ShortRecipeSerializer(recipe)
         user = request.user
         favorite_recipe = user.favorite_recipes.filter(recipe=recipe)
-        if request.method == "DELETE":
-            if favorite_recipe.exists():
-                favorite_recipe.delete()
-                return Response(status=status.HTTP_204_NO_CONTENT)
-            return Response(
-                data={"error": "This recipe is not in your favorite list"},
+        if request.method == "DELETE" and favorite_recipe.exists():
+            favorite_recipe.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        if request.method == "POST" and not favorite_recipe.exists():
+            FavoriteRecipe.objects.create(user=user, recipe=recipe)
+            return Response(data=serializer.data,
+                            status=status.HTTP_201_CREATED)
+        return Response(
+                data={"error": ("This recipe is already your favorite one, "
+                                "or it doest't exist")},
                 status=status.HTTP_400_BAD_REQUEST
-            )
-        if favorite_recipe.exists():
-            return Response(
-                data={"error": "This recipe is already your favorite one"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        FavoriteRecipe.objects.create(user=user, recipe=recipe)
-        return Response(data=serializer.data, status=status.HTTP_201_CREATED)
+        )
 
     @action(detail=True,
             methods=["post", "delete"],
@@ -75,22 +72,19 @@ class RecipeViewSet(ModelViewSet):
         recipe = get_object_or_404(Recipes, pk=pk)
         serializer = ShortRecipeSerializer(recipe)
         user = request.user
-        cart_recipe = user.cart_user.filter(recipe=recipe)
-        if request.method == "DELETE":
-            if cart_recipe.exists():
-                cart_recipe.delete()
-                return Response(status=status.HTTP_204_NO_CONTENT)
-            return Response(
-                data={"error": "This recipe is not in your shopping cart"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        if cart_recipe.exists():
-            return Response(
-                data={"error": "This recipe is already in your shopping cart"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        RecipeInShoppingCart.objects.create(user=user, recipe=recipe)
-        return Response(data=serializer.data, status=status.HTTP_201_CREATED)
+        cart_recipe = user.cart_recipes.filter(recipe=recipe)
+        if request.method == "DELETE" and cart_recipe.exists():
+            cart_recipe.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        if request.method == "POST" and not cart_recipe.exists():
+            RecipeInShoppingCart.objects.create(user=user, recipe=recipe)
+            return Response(data=serializer.data,
+                            status=status.HTTP_201_CREATED)
+        return Response(
+            data={"error": ("This recipe is already in your shopping cart, "
+                            "or it doest't exist")},
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
     @action(detail=False,
             methods=["get"],
@@ -98,7 +92,7 @@ class RecipeViewSet(ModelViewSet):
             permission_classes=(IsAuthenticated,))
     def download_shopping_cart(self, request):
         shopping_list = dict()
-        for ingredient in request.user.cart_user.values_list(
+        for ingredient in request.user.cart_recipes.values_list(
                 "recipe__ingredients__ingredient__name",
                 "recipe__ingredients__ingredient__measurement_unit",
                 "recipe__ingredients__amount"):
@@ -135,21 +129,20 @@ class SubscriptionViewSet(GenericViewSet):
         user = request.user
         user_to_follow = get_object_or_404(User, pk=pk)
         subscription = user.follower.filter(author=user_to_follow)
-        if request.method == "DELETE":
-            if subscription.exists():
-                subscription.delete()
-                return Response(status=status.HTTP_204_NO_CONTENT)
-            return Response(data={"error": "Subscription doesn't exist"},
-                            status=status.HTTP_400_BAD_REQUEST)
+        if request.method == "DELETE" and subscription.exists():
+            subscription.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
         if user == user_to_follow:
             return Response(data={"error": "You can't subscribe to yourself"},
                             status=status.HTTP_400_BAD_REQUEST)
-        if subscription.exists():
-            return Response(
-                data={"error": "You've already subscribed to this user"},
+        if request.method == "POST" and not subscription.exists():
+            subscription = Subscription.objects.create(user=user,
+                                                       author=user_to_follow)
+            serializer = self.get_serializer(subscription.author)
+            return Response(data=serializer.data,
+                            status=status.HTTP_201_CREATED)
+        return Response(
+                data={"error": ("You've already subscribed to this user, "
+                                "or this subscription doesn't exist")},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        subscription = Subscription.objects.create(user=user,
-                                                   author=user_to_follow)
-        serializer = self.get_serializer(subscription.author)
-        return Response(data=serializer.data, status=status.HTTP_201_CREATED)

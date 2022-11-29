@@ -58,7 +58,7 @@ class Recipes(models.Model):
                               default=None)
     tags = models.ManyToManyField(Tags,
                                   verbose_name="Теги",
-                                  through="RecipeTag")
+                                  related_name="recipes")
     pub_date = models.DateTimeField("Дата публикации",
                                     auto_now_add=True,
                                     db_index=True)
@@ -99,24 +99,6 @@ class RecipeIngredient(models.Model):
                 f"{self.ingredient.measurement_unit}")
 
 
-class RecipeTag(models.Model):
-    recipe = models.ForeignKey(Recipes, on_delete=models.CASCADE)
-    tag = models.ForeignKey(Tags,
-                            on_delete=models.CASCADE,
-                            related_name="recipe_tag")
-
-    class Meta:
-        verbose_name = "Тег рецепта"
-        verbose_name_plural = "Теги рецепта"
-        constraints = [
-            models.UniqueConstraint(fields=["recipe", "tag"],
-                                    name="unique_tag")
-        ]
-
-    def __str__(self):
-        return (f"{self.recipe}: {self.tag}")
-
-
 class FavoriteRecipe(models.Model):
     user = models.ForeignKey(User,
                              verbose_name="Пользователь",
@@ -141,11 +123,11 @@ class RecipeInShoppingCart(models.Model):
     user = models.ForeignKey(User,
                              verbose_name="Пользователь",
                              on_delete=models.CASCADE,
-                             related_name="cart_user")
+                             related_name="cart_recipes")
     recipe = models.ForeignKey(Recipes,
                                verbose_name="Рецепт",
                                on_delete=models.CASCADE,
-                               related_name="cart_recipe")
+                               related_name="user_cart_recipes")
 
     class Meta:
         verbose_name = "Рецепт в корзине"

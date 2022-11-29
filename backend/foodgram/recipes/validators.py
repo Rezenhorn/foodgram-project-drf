@@ -8,5 +8,5 @@ class TagSlugValidator(RegexValidator):
 
 
 class ColorHexValidator(RegexValidator):
-    regex = r"/^#[0-9A-F]{6}$/i"
+    regex = r"/^#([0-9A-F]{3}){1,2}$/i"
     message = ("Invalid hex color code.")

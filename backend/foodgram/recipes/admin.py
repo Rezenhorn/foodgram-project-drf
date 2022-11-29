@@ -1,22 +1,16 @@
 from django.contrib import admin
 
 from .models import (FavoriteRecipe, Ingredients, RecipeIngredient,
-                     RecipeInShoppingCart, Recipes, RecipeTag, Tags)
+                     RecipeInShoppingCart, Recipes, Tags)
 
 admin.site.register(FavoriteRecipe)
 admin.site.register(RecipeIngredient)
 admin.site.register(Tags)
-admin.site.register(RecipeTag)
 admin.site.register(RecipeInShoppingCart)
 
 
 class RecipeIngredientEdit(admin.TabularInline):
     model = RecipeIngredient
-    extra = 0
-
-
-class RecipeTagEdit(admin.TabularInline):
-    model = RecipeTag
     extra = 0
 
 
@@ -31,7 +25,7 @@ class RecipesAdmin(admin.ModelAdmin):
     list_display = ("name", "author")
     list_filter = ("author", "name", "tags")
     readonly_fields = ("recipe_in_favorite",)
-    inlines = (RecipeIngredientEdit, RecipeTagEdit)
+    inlines = (RecipeIngredientEdit,)
 
     @admin.display(description="Число добавлений рецепта в избранное")
     def recipe_in_favorite(self, obj):

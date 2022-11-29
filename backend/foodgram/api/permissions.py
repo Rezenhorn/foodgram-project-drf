@@ -1,8 +1,7 @@
 from rest_framework import permissions
 
 
-class AdminOwnerOrReadOnly(
-        permissions.BasePermission):
+class AdminOwnerOrReadOnly(permissions.BasePermission):
     """
     Разрешение на действия только для admin или автора,
     остальным доступ только на чтение.
