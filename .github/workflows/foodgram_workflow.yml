@@ -1,5 +1,3 @@
-
-<<<<<<< HEAD
 name: Django-app workflow
 
 on: [push]
@@ -90,5 +88,3 @@ jobs:
             message: ${{ github.workflow }} успешно выполнен!
                      Push от ${{ github.actor }}, комментарий ${{ github.event.commits[0].message }},
                      Коммит https://github.com/${{ github.repository }}/commit/${{github.sha}}
-=======
->>>>>>> 7864235e63bea06d74d481fa8be18877ea890fa2
