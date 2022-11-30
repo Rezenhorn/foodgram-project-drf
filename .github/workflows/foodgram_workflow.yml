@@ -60,7 +60,7 @@ jobs:
               mkdir -p foodgram/
               cd foodgram/
               sudo docker-compose stop
-              sudo docker-compose rm web
+              sudo docker-compose rm backend
               touch .env
               echo DB_ENGINE=${{ secrets.DB_ENGINE }} >> .env
               echo DB_NAME=${{ secrets.DB_NAME }} >> .env
@@ -71,7 +71,7 @@ jobs:
               echo DEBUG=${{ secrets.DEBUG }} >> .env
               echo ALLOWED_HOSTS=${{ secrets.ALLOWED_HOSTS }} >> .env
               echo SECRET_KEY=${{ secrets.SECRET_KEY }} >> .env
-              sudo docker pull ${{ secrets.DOCKER_USERNAME }}/api_yamdb:latest
+              sudo docker pull ${{ secrets.DOCKER_USERNAME }}/backend:latest
               sudo docker-compose up -d
               sudo docker-compose exec -T backend python manage.py migrate
               sudo docker-compose exec -T backend python manage.py collectstatic --no-input
