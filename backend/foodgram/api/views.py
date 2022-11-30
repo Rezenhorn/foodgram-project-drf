@@ -59,9 +59,9 @@ class RecipeViewSet(ModelViewSet):
             return Response(data=serializer.data,
                             status=status.HTTP_201_CREATED)
         return Response(
-                data={"error": ("This recipe is already your favorite one, "
-                                "or it doest't exist")},
-                status=status.HTTP_400_BAD_REQUEST
+            data={"error": ("This recipe is already your favorite one, "
+                            "or it doest't exist")},
+            status=status.HTTP_400_BAD_REQUEST
         )
 
     @action(detail=True,
@@ -142,7 +142,7 @@ class SubscriptionViewSet(GenericViewSet):
             return Response(data=serializer.data,
                             status=status.HTTP_201_CREATED)
         return Response(
-                data={"error": ("You've already subscribed to this user, "
-                                "or this subscription doesn't exist")},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            data={"error": ("You've already subscribed to this user, "
+                            "or this subscription doesn't exist")},
+            status=status.HTTP_400_BAD_REQUEST
+        )
