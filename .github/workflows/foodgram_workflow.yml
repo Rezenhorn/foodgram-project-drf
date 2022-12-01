@@ -63,8 +63,6 @@ jobs:
             key: ${{ secrets.SSH_KEY }}
             passphrase: ${{ secrets.PASSPHRASE }}
             script: |
-              mkdir -p foodgram/
-              cd foodgram/
               sudo docker-compose stop
               sudo docker-compose rm backend
               sudo docker-compose rm frontend

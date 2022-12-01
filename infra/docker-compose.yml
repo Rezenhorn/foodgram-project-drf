@@ -7,9 +7,7 @@ services:
     env_file:
       - ./.env
   backend:
-    build:
-      context: ../backend/
-      dockerfile: Dockerfile
+    image: rezenhorn/foodgram_backend:latest
     volumes:
       - static_value:/app/static/
       - media_value:/app/media/
@@ -19,9 +17,7 @@ services:
       - ./.env
 
   frontend:
-    build:
-      context: ../frontend
-      dockerfile: Dockerfile
+    image: rezenhorn/foodgram_frontend:latest
     volumes:
       - ../frontend/:/app/result_build/
   nginx:
