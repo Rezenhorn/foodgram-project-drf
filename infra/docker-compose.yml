@@ -33,6 +33,7 @@ services:
     depends_on:
       - frontend
       - backend
+
 volumes:
   postgres_data:
   static_value:
