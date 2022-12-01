@@ -127,8 +127,6 @@ USE_L10N = True
 
 USE_TZ = True
 
-STATIC_URL = '/static/'
-
 CORS_ALLOWED_ORIGINS = [
     'http://localhost',
 ]
