@@ -3,9 +3,12 @@
 
 ## Описание:
 - Проект Foodgram "Продуктовый помощник" является сайтом для публикации рецептов. Пользователь может публиковать свои рецепты, подписываться на других авторов, добавлять рецепты в избранное, а также добавлять рецепты в список покупок и скачивать файл с необходимыми ингредиентами и их количеством. У каждого рецепта есть теги, время приготовления, ингредиенты с количеством, описание и картинка.
+Проект запущен по адресу: http://158.160.20.159/
+Данные для входа в админ-панель:
+- Email: admin@admin.ru
+- Пароль: admin
 
 ## Как запустить проект локально:
-
 ### Клонировать репозиторий и перейти в него:
 ```
 git clone https://github.com/Rezenhorn/foodgram-project-react.git
@@ -18,9 +21,9 @@ docker-compose up -d --build
 ```
 ### Выполнить миграции, создать суперпользователя, собрать статику:
 ```
-docker-compose exec backend -T python manage.py migrate
-docker-compose exec backend -T python manage.py createsuperuser
-docker-compose exec backend -T python manage.py collectstatic --no-input
+docker-compose exec backend python manage.py migrate
+docker-compose exec backend python manage.py createsuperuser
+docker-compose exec backend python manage.py collectstatic --no-input
 ```
 ## Чтобы прекратить работу, необходимо остановить собранные контейнеры:
 ```
