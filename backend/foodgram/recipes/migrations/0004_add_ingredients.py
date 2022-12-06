@@ -4,7 +4,7 @@ import csv
 from django.db import migrations
 
 
-with open('../../data/ingredients.csv', newline='', encoding="utf-8") as csvfile:
+with open('../data/ingredients.csv', newline='', encoding="utf-8") as csvfile:
     ingredient_reader = csv.reader(csvfile)
     INITIAL_INGREDIENTS = [
         {'name': row[0],
