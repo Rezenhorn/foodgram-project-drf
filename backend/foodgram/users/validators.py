@@ -1,7 +1,9 @@
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from rest_framework.serializers import ValidationError
+from django.utils.deconstruct import deconstructible
 
 
+@deconstructible
 class UsernameValidator(UnicodeUsernameValidator):
     """Prohibition to use the username 'me'."""
 

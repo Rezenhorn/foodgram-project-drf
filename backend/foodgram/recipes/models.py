@@ -12,11 +12,11 @@ class Tags(models.Model):
     color = models.CharField("Цвет",
                              max_length=7,
                              unique=True,
-                             validators=(ColorHexValidator,))
+                             validators=(ColorHexValidator(),))
     slug = models.SlugField("Слаг",
                             max_length=200,
                             unique=True,
-                            validators=(TagSlugValidator,))
+                            validators=(TagSlugValidator(),))
 
     class Meta:
         verbose_name = "Тег"
