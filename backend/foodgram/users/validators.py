@@ -5,9 +5,9 @@ from django.utils.deconstruct import deconstructible
 
 @deconstructible
 class UsernameValidator(UnicodeUsernameValidator):
-    """Prohibition to use the username 'me'."""
+    """Запрет на использование username = 'me'."""
 
     def __call__(self, value):
         if value.lower() == "me":
-            raise ValidationError("Username 'me' is prohibited.")
+            raise ValidationError("Username 'me' is forbidden.")
         return super().__call__(value)
